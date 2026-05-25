@@ -263,18 +263,18 @@ def plot_xgboost_vs_actual():
     plt.figure(figsize=(14, 7))
     
     # Plot lines
-    plt.plot(df_pred.index, df_pred["Actual"], label="Số lượng đơn hàng thực tế (Actual)", color=PALETTE["dark"], linewidth=2.5, marker="o", markersize=5)
-    plt.plot(df_pred.index, df_pred["xgboost"], label="XGBoost Dự đoán (Recursive Prediction)", color=PALETTE["accent"], linewidth=2.5, marker="s", markersize=5)
+    plt.plot(df_pred.index, df_pred["Actual"], label="Actual Daily Orders", color=PALETTE["dark"], linewidth=2.5, marker="o", markersize=5)
+    plt.plot(df_pred.index, df_pred["xgboost"], label="XGBoost Recursive Forecast", color=PALETTE["accent"], linewidth=2.5, marker="s", markersize=5)
     
     # Shade the error area between actual and predicted
-    plt.fill_between(df_pred.index, df_pred["Actual"], df_pred["xgboost"], color=PALETTE["accent"], alpha=0.15, label="Sai lệch dự báo (Error)")
+    plt.fill_between(df_pred.index, df_pred["Actual"], df_pred["xgboost"], color=PALETTE["accent"], alpha=0.15, label="Forecast Error")
     
     # Add metrics text box
     textstr = '\n'.join((
-        r'$\bf{Chỉ\ số\ đánh\ giá\ XGBoost:}$',
+        r'$\bf{XGBoost\ Evaluation\ Metrics:}$',
         f'MAPE: {metrics["MAPE"]:.2f}%',
-        f'MAE: {metrics["MAE"]:.2f} đơn',
-        f'RMSE: {metrics["RMSE"]:.2f} đơn'
+        f'MAE: {metrics["MAE"]:.2f} orders',
+        f'RMSE: {metrics["RMSE"]:.2f} orders'
     ))
     
     # Position text box in upper left
@@ -282,9 +282,9 @@ def plot_xgboost_vs_actual():
     plt.gca().text(0.02, 0.95, textstr, transform=plt.gca().transAxes, fontsize=11,
             verticalalignment='top', bbox=props)
             
-    plt.title("So Sánh Số Lượng Đơn Hàng Thực Tế và XGBoost Dự Đoán (30 Ngày Test Sạch)", pad=20, fontweight="bold", color=PALETTE["dark"])
-    plt.xlabel("Ngày đặt hàng", labelpad=10)
-    plt.ylabel("Số lượng đơn hàng", labelpad=10)
+    plt.title("Actual Daily Orders vs. XGBoost Forecast (Clean 30-Day Test Period)", pad=20, fontweight="bold", color=PALETTE["dark"])
+    plt.xlabel("Order Date", labelpad=10)
+    plt.ylabel("Order Count", labelpad=10)
     plt.legend(loc="upper right", frameon=True, facecolor='white', edgecolor=PALETTE["neutral"])
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()

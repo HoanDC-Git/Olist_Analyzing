@@ -1,23 +1,23 @@
-# Đường dẫn dữ liệu
+# Data paths
 paths:
   raw_data_dir: "data/raw"
   processed_data_dir: "data/processed"
   output_dir: "reports"
   charts_dir: "reports/figures"
 
-# Cấu hình tiền xử lý & làm sạch
+# Preprocessing & cleaning configuration
 cleaning:
   start_date: "2017-01-01"
-  end_date: "2018-08-20" # Loại bỏ phần dữ liệu cutoff lỗi ở cuối tháng 8/2018
+  end_date: "2018-08-20" # Removed database cutoff anomaly in late August 2018
 
-# Tham số huấn luyện chuỗi thời gian
+# Time series forecasting parameters
 forecasting:
   test_days: 30
   target_col: "order_count"
   date_col: "date"
-  cv_splits: 5 # Số fold cho Time Series Cross-Validation
+  cv_splits: 5 # Number of splits for Time Series Cross-Validation
 
-# Cấu hình siêu tham số mô hình
+# Model hyperparameter configuration
 models:
   sarimax:
     order: [1, 1, 1]
