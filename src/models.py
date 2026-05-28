@@ -125,14 +125,14 @@ def train_and_forecast(train_df, test_df, model_name, config):
         sarimax_config = config["models"]["sarimax"]
         model = SARIMAX(
             endog=train_df["order_count"],
-            exog=train_df[["event_weight"]],
+            exog=train_df[["is_holiday", "is_black_friday"]],
             order=sarimax_config["order"],
             seasonal_order=sarimax_config["seasonal_order"],
             enforce_stationarity=False,
             enforce_invertibility=False
         )
         model_fit = model.fit(disp=False)
-        forecast = model_fit.get_forecast(steps=test_days, exog=test_df[["event_weight"]])
+        forecast = model_fit.get_forecast(steps=test_days, exog=test_df[["is_holiday", "is_black_friday"]])
         # Clip negative forecasts
         pred = forecast.predicted_mean.values
         pred = np.clip(pred, 0, None)
@@ -148,10 +148,11 @@ def train_and_forecast(train_df, test_df, model_name, config):
             weekly_seasonality=config["models"]["prophet"]["weekly_seasonality"],
             yearly_seasonality=config["models"]["prophet"]["yearly_seasonality"]
         )
-        model.add_regressor("event_weight")
+        model.add_regressor("is_holiday")
+        model.add_regressor("is_black_friday")
         model.fit(train_p)
         
-        future = test_p[["ds", "event_weight"]].copy()
+        future = test_p[["ds", "is_holiday", "is_black_friday"]].copy()
         forecast = model.predict(future)
         pred = forecast["yhat"].values
         pred = np.clip(pred, 0, None)
@@ -185,7 +186,7 @@ def train_and_forecast(train_df, test_df, model_name, config):
         train_full = train_full.iloc[30:].reset_index(drop=True)
         
         feature_cols = [
-            "event_weight", "day_of_week", "day_of_month", "month", "quarter", "year",
+            "is_holiday", "is_black_friday", "day_of_week", "day_of_month", "month", "quarter", "year",
             "lag_1", "lag_7", "lag_14", "lag_30", "rolling_mean_7", "rolling_mean_30"
         ]
         

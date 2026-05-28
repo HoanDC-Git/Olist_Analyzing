@@ -58,12 +58,17 @@ def create_time_series_data():
     bf_set = get_black_friday_dates(years_in_data)
     print(f"  Calculated Black Fridays: {bf_set}")
     
-    # Initialize event weight (0 for normal, 1 for holiday, 5 for Black Friday)
+    # Initialize event weight (0 for normal, 1 for holiday, 5 for Black Friday) and binary indicators
     df_ts["event_weight"] = 0
+    df_ts["is_holiday"] = 0
+    df_ts["is_black_friday"] = 0
     date_strings = df_ts["date"].dt.strftime('%Y-%m-%d')
     
     df_ts.loc[date_strings.isin(holidays_set), "event_weight"] = 1
+    df_ts.loc[date_strings.isin(holidays_set), "is_holiday"] = 1
+    
     df_ts.loc[date_strings.isin(bf_set), "event_weight"] = 5
+    df_ts.loc[date_strings.isin(bf_set), "is_black_friday"] = 1
     
     # Save processed timeseries
     df_ts.to_csv(output_path, index=False)
@@ -118,13 +123,15 @@ def run_rfm_analysis():
     # We will use custom bins or rank with method='first' to avoid duplicate bin issues.
     rfm["R_Score"] = pd.qcut(rfm["Recency"], 5, labels=[5, 4, 3, 2, 1])
     
-    # Handle frequency scoring: if frequency is 1, score is 1. If >1, we score higher.
+    # Handle frequency scoring: map frequency directly to scores 1-5
     def score_frequency(freq):
         if freq == 1:
             return 1
         elif freq == 2:
-            return 3
+            return 2
         elif freq == 3:
+            return 3
+        elif freq == 4:
             return 4
         else:
             return 5
@@ -207,6 +214,16 @@ def run_cohort_analysis():
     cohort_sizes = cohort_pivot.iloc[:, 0]
     retention_matrix = cohort_pivot.divide(cohort_sizes, axis=0)
     
+    # Fill historical NaNs (where retention was exactly 0% in the past) with 0.0
+    # Keep future NaNs (after the end of the dataset) as NaN to remain blank/masked
+    max_month = df["order_month"].max()
+    for r_month in retention_matrix.index:
+        for c_index in retention_matrix.columns:
+            target_month = r_month + int(c_index)
+            if target_month <= max_month:
+                if pd.isnull(retention_matrix.loc[r_month, c_index]):
+                    retention_matrix.loc[r_month, c_index] = 0.0
+    
     # Save Cohort Results
     cohort_path = os.path.join(proc_dir, "cohort_retention.csv")
     retention_matrix.to_csv(cohort_path)
@@ -216,12 +233,72 @@ def run_cohort_analysis():
     
     return cohort_sizes, retention_matrix
 
+def run_review_analysis():
+    """Analyze customer review comments for negative feedback and categorize them."""
+    config = load_config()
+    proc_dir = config["paths"]["processed_data_dir"]
+    reviews_path = os.path.join(proc_dir, "olist_order_reviews_dataset.csv")
+    output_path = os.path.join(proc_dir, "review_complaints_summary.csv")
+    
+    print("Analyzing customer review comments...")
+    if not os.path.exists(reviews_path):
+        print(f"  Warning: Reviews file not found at {reviews_path}")
+        return None
+        
+    df = pd.read_csv(reviews_path)
+    
+    # Filter for negative reviews (score 1 or 2) with comment message
+    neg_reviews = df[
+        (df["review_score"] <= 2) & 
+        (df["review_comment_message"].notnull()) & 
+        (df["review_comment_message"] != "") &
+        (df["review_comment_message"].astype(str).str.strip() != "")
+    ].copy()
+    
+    neg_reviews["review_comment_message"] = neg_reviews["review_comment_message"].astype(str).str.lower()
+    
+    # Portuguese keywords for categorizing complaints
+    keywords = {
+        "Logistics Delay": ["atras", "demor", "lento", "nao chego", "esperando", "prazo", "estourou", "passou", "entreg"],
+        "Product Damage/Defect": ["defeit", "quebrad", "estrag", "danific", "riscad", "quebrou", "pessimo", "ruim", "qualidade", "funcion"],
+        "Wrong/Incomplete Item": ["errad", "diferent", "falta", "incomplet", "faltou", "outro", "so veio", "so um", "so 1"],
+        "Non-Delivery": ["nao recebi", "nunca chegou", "nao entreg", "extraviado", "nao veio", "sem receber"],
+        "Customer Support": ["suport", "atend", "contat", "reclam", "nao responde", "telefone", "email"]
+    }
+    
+    # Initialize counts
+    categorized_counts = {cat: 0 for cat in keywords.keys()}
+    categorized_counts["Other Issues"] = 0
+    
+    total_messages = len(neg_reviews)
+    print(f"  Analyzing {total_messages} negative review comments...")
+    
+    for _, row in neg_reviews.iterrows():
+        msg = row["review_comment_message"]
+        matched = False
+        for cat, kw_list in keywords.items():
+            if any(kw in msg for kw in kw_list):
+                categorized_counts[cat] += 1
+                matched = True
+        if not matched:
+            categorized_counts["Other Issues"] += 1
+            
+    # Create DataFrame
+    summary_df = pd.DataFrame(list(categorized_counts.items()), columns=["Category", "Count"])
+    summary_df["Percentage"] = (summary_df["Count"] / total_messages) * 100
+    summary_df.to_csv(output_path, index=False)
+    print(f"  Saved review complaints summary to {output_path}")
+    print(summary_df)
+    
+    return summary_df
+
 def run_all_feature_engineering():
     """Run the entire feature engineering pipeline."""
     print("--- Starting Feature Engineering Pipeline ---")
     create_time_series_data()
     run_rfm_analysis()
     run_cohort_analysis()
+    run_review_analysis()
     print("--- Feature Engineering Pipeline Completed Successfully ---\n")
 
 if __name__ == "__main__":

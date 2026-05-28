@@ -13,8 +13,10 @@ def clean_products(df):
     df["product_description_lenght"] = df["product_description_lenght"].fillna(0).astype(int)
     df["product_photos_qty"] = df["product_photos_qty"].fillna(0).astype(int)
     
-    # Fill physical dimensions with median
+    # Fill physical dimensions with category-wise median, falling back to global median
     for col in ["product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm"]:
+        category_medians = df.groupby("product_category_name")[col].transform("median")
+        df[col] = df[col].fillna(category_medians)
         df[col] = df[col].fillna(df[col].median())
         
     return df

@@ -175,7 +175,7 @@ def plot_time_series_eda():
     print(f"Saved daily orders and events plot to {save_path}")
 
 def plot_forecast_comparison():
-    """Generate and save the forecast comparison plot."""
+    """Generate and save the forecast comparison plot split into clear subplots."""
     config = load_config()
     proc_dir = config["paths"]["processed_data_dir"]
     charts_dir = config["paths"]["charts_dir"]
@@ -189,12 +189,8 @@ def plot_forecast_comparison():
     df_pred["date"] = pd.to_datetime(df_pred["date"])
     df_pred.set_index("date", inplace=True)
     
-    plt.figure(figsize=(14, 7))
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
     
-    # Plot Actual
-    plt.plot(df_pred.index, df_pred["Actual"], label="Actual", color=PALETTE["dark"], linewidth=2.5, marker="o", markersize=4)
-    
-    # Plot Models
     model_colors = {
         "baseline": PALETTE["neutral"],
         "sarimax": PALETTE["secondary"],
@@ -211,9 +207,11 @@ def plot_forecast_comparison():
         "lightgbm": "-."
     }
     
-    for model_name in ["baseline", "sarimax", "prophet", "xgboost", "lightgbm"]:
+    # 1. Classical/Statistical Models (Subplot 1)
+    ax1.plot(df_pred.index, df_pred["Actual"], label="Actual Daily Orders", color=PALETTE["dark"], linewidth=2.5, marker="o", markersize=4)
+    for model_name in ["baseline", "sarimax", "prophet"]:
         if model_name in df_pred.columns:
-            plt.plot(
+            ax1.plot(
                 df_pred.index,
                 df_pred[model_name],
                 label=model_name.upper(),
@@ -221,12 +219,30 @@ def plot_forecast_comparison():
                 linestyle=model_styles[model_name],
                 linewidth=1.8
             )
-            
-    plt.title("Model Forecasts Comparison (30-Day Testing Period)", pad=20, fontweight="bold", color=PALETTE["dark"])
-    plt.xlabel("Date", labelpad=10)
-    plt.ylabel("Number of Orders", labelpad=10)
-    plt.legend(loc="upper left", frameon=True, facecolor='white', edgecolor=PALETTE["neutral"])
-    plt.grid(True, linestyle="--", alpha=0.5)
+    ax1.set_title("Statistical & Baseline Models vs. Actual", fontweight="bold", fontsize=12, color=PALETTE["dark"])
+    ax1.set_ylabel("Number of Orders")
+    ax1.legend(loc="upper left", frameon=True, facecolor='white', edgecolor=PALETTE["neutral"])
+    ax1.grid(True, linestyle="--", alpha=0.5)
+    
+    # 2. Machine Learning Models (Subplot 2)
+    ax2.plot(df_pred.index, df_pred["Actual"], label="Actual Daily Orders", color=PALETTE["dark"], linewidth=2.5, marker="o", markersize=4)
+    for model_name in ["xgboost", "lightgbm"]:
+        if model_name in df_pred.columns:
+            ax2.plot(
+                df_pred.index,
+                df_pred[model_name],
+                label=model_name.upper(),
+                color=model_colors[model_name],
+                linestyle=model_styles[model_name],
+                linewidth=1.8
+            )
+    ax2.set_title("Machine Learning Models (Recursive) vs. Actual", fontweight="bold", fontsize=12, color=PALETTE["dark"])
+    ax2.set_ylabel("Number of Orders")
+    ax2.set_xlabel("Date")
+    ax2.legend(loc="upper left", frameon=True, facecolor='white', edgecolor=PALETTE["neutral"])
+    ax2.grid(True, linestyle="--", alpha=0.5)
+    
+    plt.suptitle("Model Forecasts Comparison (30-Day Testing Period)", fontweight="bold", fontsize=15, color=PALETTE["dark"])
     plt.tight_layout()
     
     save_path = os.path.join(charts_dir, "04_model_forecasts_comparison.png")
@@ -294,6 +310,58 @@ def plot_xgboost_vs_actual():
     plt.close()
     print(f"Saved XGBoost vs Actual comparison plot to {save_path}")
 
+def plot_review_complaints():
+    """Generate and save customer review complaints distribution plot."""
+    config = load_config()
+    proc_dir = config["paths"]["processed_data_dir"]
+    charts_dir = config["paths"]["charts_dir"]
+    
+    complaints_path = os.path.join(proc_dir, "review_complaints_summary.csv")
+    if not os.path.exists(complaints_path):
+        print(f"Complaints file not found at {complaints_path}. Skipping.")
+        return
+        
+    df_complaints = pd.read_csv(complaints_path)
+    # Sort by percentage
+    df_complaints = df_complaints.sort_values(by="Percentage", ascending=False).reset_index(drop=True)
+    
+    plt.figure(figsize=(12, 6))
+    
+    # Plot horizontal bar chart
+    ax = sns.barplot(
+        x="Percentage",
+        y="Category",
+        data=df_complaints,
+        palette="Reds_r",
+        edgecolor=PALETTE["dark"],
+        linewidth=0.8
+    )
+    
+    # Add values labels
+    for i, p in enumerate(ax.patches):
+        width = p.get_width()
+        count = df_complaints["Count"].iloc[i]
+        ax.text(
+            width + 1,
+            p.get_y() + p.get_height() / 2,
+            f"{width:.1f}% ({int(count):,} reviews)",
+            va="center",
+            ha="left",
+            fontsize=10,
+            fontweight="bold"
+        )
+        
+    plt.title("Distribution of Customer Complaints in Negative Reviews (1-2 Stars)", pad=20, fontweight="bold", color=PALETTE["dark"])
+    plt.xlabel("Percentage of Reviews containing issue (%)", labelpad=10)
+    plt.ylabel("Complaint Category", labelpad=10)
+    plt.xlim(0, max(df_complaints["Percentage"]) * 1.15)
+    plt.tight_layout()
+    
+    save_path = os.path.join(charts_dir, "06_review_complaints.png")
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+    print(f"Saved review complaints plot to {save_path}")
+
 def run_visualization_pipeline():
     """Main visualization pipeline execution."""
     print("--- Starting Visualization Pipeline ---")
@@ -302,6 +370,7 @@ def run_visualization_pipeline():
     plot_time_series_eda()
     plot_forecast_comparison()
     plot_xgboost_vs_actual()
+    plot_review_complaints()
     print("--- Visualization Pipeline Completed Successfully ---\n")
 
 if __name__ == "__main__":
