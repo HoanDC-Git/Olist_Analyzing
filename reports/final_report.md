@@ -18,19 +18,20 @@ The project has been restructured from single linear scripts into a professional
 
 ### 2.1. Customer RFM Analysis & Segment Definitions
 
-An RFM (Recency, Frequency, Monetary) analysis conducted on **94,663** unique customers reveals that Olist faces a severe customer retention challenge. 
+An RFM (Recency, Frequency, Monetary) analysis conducted on **94,629** unique customers reveals that Olist faces a severe customer retention challenge. 
 
 Below are the detailed definitions and percentages of each customer segment:
 
 | Segment | Technical Definition (R_Score, F_Score) | Business Meaning & Profile | Customer Share (%) |
 | :--- | :--- | :--- | :---: |
-| **Champions** | $R \ge 4$ and $F \ge 4$ | Bought recently, buy frequently, and spend the most. These are VIP customers. Recommend exclusive loyalty rewards. | **0.14%** (129 customers) |
-| **Loyal Customers** | $R \ge 3$ and $F \ge 3$ | Buy regularly, spend well, and respond highly to marketing campaigns. | **1.86%** (1,762 customers) |
-| **Recent Customers** | $R \ge 4$ and $F < 3$ | Bought recently but have low frequency (usually single-order customers). Aim to convert them to a second purchase. | **38.91%** (36,835 customers) |
-| **About to Sleep** | $R = 3$ and $F < 3$ | Below average recency and frequency. At risk of churn to competitors; requires soft reactivation emails. | **19.12%** (18,103 customers) |
-| **Customers Needing Attention** | $R = 2$ | Haven't purchased in a while. Needs aggressive reactivation campaigns, vouchers, and personalized discounts. | **19.99%** (18,929 customers) |
-| **Can't Lose Them** | $R = 1$ and $F \ge 3$ | Used to buy frequently but haven't returned in a long time. High churn risk; requires direct surveys or win-back campaigns. | **0.48%** (457 customers) |
-| **Lost** | $R = 1$ and $F = 1$ | Bought once, a very long time ago, and never returned. Cost-ineffective to reactivate. | **19.45%** (18,414 customers) |
+| **Champions** | $R \ge 4$ and $F \ge 4$ | Bought recently, buy frequently, and spend the most. These are VIP customers. Recommend exclusive loyalty rewards. | **0.03%** (32 customers) |
+| **Loyal Customers** | $R \ge 3$ and $F \ge 3$ | Buy regularly, spend well, and respond highly to marketing campaigns. | **0.14%** (134 customers) |
+| **Recent Customers** | $R \ge 4$ and $F < 3$ | Bought recently but have low frequency (usually single-order customers). Aim to convert them to a second purchase. | **40.13%** (37,977 customers) |
+| **About to Sleep** | $R = 3$ and $F < 3$ | Below average recency and frequency. At risk of churn to competitors; requires soft reactivation emails. | **19.75%** (18,686 customers) |
+| **Customers Needing Attention** | $R = 2$ | Haven't purchased in a while. Needs aggressive reactivation campaigns, vouchers, and personalized discounts. | **20.00%** (18,929 customers) |
+| **Can't Lose Them** | $R = 1$ and $F \ge 3$ | Used to buy frequently but haven't returned in a long time. High churn risk; requires direct surveys or win-back campaigns. | **0.03%** (32 customers) |
+| **At Risk** | $R = 1$ and $F = 2$ | Bought twice in the past, but has not returned in a long time. Moderate churn risk. | **0.45%** (425 customers) |
+| **Lost** | $R = 1$ and $F = 1$ | Bought once, a very long time ago, and never returned. Cost-ineffective to reactivate. | **19.46%** (18,414 customers) |
 
 > [!IMPORTANT]
 > **Key Business Takeaway:** One-time transactional segments (**Recent, About to Sleep, Needing Attention, Lost**) make up over **97%** of Olist's customer base. The loyal segments (**Champions & Loyal**) represent only **2.0%** combined. This indicates that Olist has high Customer Acquisition Cost (CAC) but extremely low Customer Lifetime Value (CLV).
@@ -72,8 +73,8 @@ Moving the test evaluation period from the corrupted trailing week to a clean wi
 | **XGBoost (Recursive)** | 123.7% | **16.9%** | **86.3% Error Reduction** |
 | **LightGBM (Recursive)** | 172.9% | **21.1%** | **87.8% Error Reduction** |
 | **Baseline (Seasonal Naive)** | 135.9% | **20.2%** | **85.1% Error Reduction** |
-| **SARIMAX** | 125.1% | **22.6%** | **81.9% Error Reduction** |
-| **Prophet** | 106.8% | **24.1%** | **77.4% Error Reduction** |
+| **SARIMAX** | 125.1% | **17.3%** | **86.2% Error Reduction** |
+| **Prophet** | 106.8% | **25.6%** | **76.0% Error Reduction** |
 
 > [!TIP]
 > Truncating the database anomaly reduced the mean absolute percentage error (MAPE) of all models from over 100% to under **25%**, which is highly acceptable for daily business transactional forecasting.
@@ -86,9 +87,9 @@ To ensure robustness across different historical periods, the average cross-vali
 | Model | Average RMSE | Average MAE | Average MAPE | Performance Rank |
 | :--- | :---: | :---: | :---: | :---: |
 | **XGBoost (Recursive)** | **49.98** | **39.95** | **20.45%** | **Rank 1 (Best)** |
-| **Baseline (Seasonal Naive)**| 60.73 | 48.95 | 25.50% | Rank 2 |
-| **Prophet** | 66.38 | 53.60 | 28.58% | Rank 3 |
-| **SARIMAX** | 66.99 | 54.73 | 29.44% | Rank 4 |
+| **Prophet** | 56.26 | 46.74 | 24.26% | Rank 2 |
+| **SARIMAX** | 55.31 | 45.59 | 24.89% | Rank 3 |
+| **Baseline (Seasonal Naive)**| 60.73 | 48.95 | 25.50% | Rank 4 |
 | **LightGBM (Recursive)** | 72.21 | 58.65 | 31.89% | Rank 5 |
 
 ---

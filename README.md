@@ -27,11 +27,11 @@ As a seller-hosting marketplace, Olist operates under a high Customer Acquisitio
 
 ### 2. Customer Reviews Text Analytics (Why Customers Churn)
 By analyzing customer comments in negative reviews (1-2 stars), we extracted the exact drivers of customer dissatisfaction:
-* **59.4% Logistics Delays:** Comments complaining about late delivery, long shipping times, or missed deadlines.
-* **24.3% Product Damage/Defects:** Reviews citing broken items, scratches, or general poor quality.
-* **21.5% Wrong/Incomplete Orders:** Missing parts, wrong colors, or receiving incorrect items.
-* **10.5% Non-Delivery:** Customers who paid but never received their orders (potential package loss).
-* **6.2% Poor Customer Support:** Lack of responses to emails or failure to resolve issues.
+* **35.2% Logistics Delays:** Comments complaining about late delivery, long shipping times, or missed deadlines.
+* **16.0% Wrong/Incomplete Orders:** Missing parts, wrong colors, or receiving incorrect items.
+* **11.5% Product Damage/Defects:** Reviews citing broken items, scratches, or general poor quality.
+* **9.7% Poor Customer Support:** Lack of responses to emails or failure to resolve issues.
+* **2.9% Non-Delivery:** Customers who paid but never received their orders (potential package loss).
 
 <p align="center">
   <img src="reports/figures/06_review_complaints.png" width="85%" alt="Distribution of Customer Complaints in Negative Reviews"/>
@@ -43,7 +43,7 @@ By analyzing customer comments in negative reviews (1-2 stars), we extracted the
 
 ### 4. RFM Customer Segmentation & Cohort Retention
 * **Retention Challenge:** Month 1 cohort retention rate is **under 0.8%** and drops to nearly **0%** by Month 3 across all cohorts. Olist functions as a one-time purchase market.
-* **Marketing Targets:** Segmented **94,663** unique customers, identifying that **Recent Customers** (bought once recently) represent **38.9%** of the user base. Deployed a fix to correctly isolate the **"At Risk"** segment (425 high-value customers who purchased twice but haven't returned) for win-back campaigns.
+* **Marketing Targets:** Segmented **94,629** unique customers, identifying that **Recent Customers** (bought once recently) represent **40.1%** of the user base, while loyal segments (**Champions & Loyal Customers**) represent a tiny **0.17%** combined. Deployed a fix to correctly isolate the **"At Risk"** segment (425 high-value customers who purchased twice but haven't returned) for win-back campaigns.
 
 <p align="center">
   <img src="reports/figures/01_cohort_retention_heatmap.png" width="49%" alt="Cohort Retention Heatmap"/>
