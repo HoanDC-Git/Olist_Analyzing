@@ -8,3 +8,8 @@ prophet
 xgboost
 lightgbm
 scikit-learn
+gensim
+nltk
+spacy
+optuna
+

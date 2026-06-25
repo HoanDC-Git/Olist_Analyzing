@@ -250,8 +250,8 @@ def plot_forecast_comparison():
     plt.close()
     print(f"Saved forecast comparison plot to {save_path}")
 
-def plot_xgboost_vs_actual():
-    """Generate and save a dedicated comparison plot for Actual vs XGBoost with metrics and error shading."""
+def plot_lightgbm_vs_actual():
+    """Generate and save a dedicated comparison plot for Actual vs LightGBM with metrics and error shading."""
     config = load_config()
     proc_dir = config["paths"]["processed_data_dir"]
     charts_dir = config["paths"]["charts_dir"]
@@ -265,13 +265,13 @@ def plot_xgboost_vs_actual():
     df_pred["date"] = pd.to_datetime(df_pred["date"])
     df_pred.set_index("date", inplace=True)
     
-    if "xgboost" not in df_pred.columns:
-        print("XGBoost predictions not found in final_forecast_predictions.csv. Skipping.")
+    if "lightgbm" not in df_pred.columns:
+        print("LightGBM predictions not found in final_forecast_predictions.csv. Skipping.")
         return
         
     # Calculate metrics for the test set
     y_true = df_pred["Actual"].values
-    y_pred = df_pred["xgboost"].values
+    y_pred = df_pred["lightgbm"].values
     
     from models import compute_metrics
     metrics = compute_metrics(y_true, y_pred)
@@ -280,14 +280,14 @@ def plot_xgboost_vs_actual():
     
     # Plot lines
     plt.plot(df_pred.index, df_pred["Actual"], label="Actual Daily Orders", color=PALETTE["dark"], linewidth=2.5, marker="o", markersize=5)
-    plt.plot(df_pred.index, df_pred["xgboost"], label="XGBoost Recursive Forecast", color=PALETTE["accent"], linewidth=2.5, marker="s", markersize=5)
+    plt.plot(df_pred.index, df_pred["lightgbm"], label="LightGBM Recursive Forecast", color="#2a9d8f", linewidth=2.5, marker="s", markersize=5)
     
     # Shade the error area between actual and predicted
-    plt.fill_between(df_pred.index, df_pred["Actual"], df_pred["xgboost"], color=PALETTE["accent"], alpha=0.15, label="Forecast Error")
+    plt.fill_between(df_pred.index, df_pred["Actual"], df_pred["lightgbm"], color="#2a9d8f", alpha=0.15, label="Forecast Error")
     
     # Add metrics text box
     textstr = '\n'.join((
-        r'$\bf{XGBoost\ Evaluation\ Metrics:}$',
+        r'$\bf{LightGBM\ Evaluation\ Metrics:}$',
         f'MAPE: {metrics["MAPE"]:.2f}%',
         f'MAE: {metrics["MAE"]:.2f} orders',
         f'RMSE: {metrics["RMSE"]:.2f} orders'
@@ -298,17 +298,17 @@ def plot_xgboost_vs_actual():
     plt.gca().text(0.02, 0.95, textstr, transform=plt.gca().transAxes, fontsize=11,
             verticalalignment='top', bbox=props)
             
-    plt.title("Actual Daily Orders vs. XGBoost Forecast (Clean 30-Day Test Period)", pad=20, fontweight="bold", color=PALETTE["dark"])
+    plt.title("Actual Daily Orders vs. LightGBM Forecast (Clean 30-Day Test Period)", pad=20, fontweight="bold", color=PALETTE["dark"])
     plt.xlabel("Order Date", labelpad=10)
     plt.ylabel("Order Count", labelpad=10)
     plt.legend(loc="upper right", frameon=True, facecolor='white', edgecolor=PALETTE["neutral"])
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()
     
-    save_path = os.path.join(charts_dir, "05_xgboost_vs_actual.png")
+    save_path = os.path.join(charts_dir, "05_lightgbm_vs_actual.png")
     plt.savefig(save_path, dpi=300)
     plt.close()
-    print(f"Saved XGBoost vs Actual comparison plot to {save_path}")
+    print(f"Saved LightGBM vs Actual comparison plot to {save_path}")
 
 def plot_review_complaints():
     """Generate and save customer review complaints distribution plot."""
@@ -362,6 +362,52 @@ def plot_review_complaints():
     plt.close()
     print(f"Saved review complaints plot to {save_path}")
 
+def plot_wordcloud():
+    """Generate and save word clouds from the TF-IDF weighted translated terms."""
+    from wordcloud import WordCloud
+    
+    config = load_config()
+    proc_dir = config["paths"]["processed_data_dir"]
+    charts_dir = config["paths"]["charts_dir"]
+    
+    sentiments = [
+        {"name": "positive", "color": "viridis", "title": "Top Semantic Words in Positive Reviews (4-5 Stars)"},
+        {"name": "negative", "color": "plasma", "title": "Top Semantic Words in Negative Reviews (1-2 Stars)"}
+    ]
+    
+    for sent in sentiments:
+        csv_path = os.path.join(proc_dir, f"nlp_tfidf_{sent['name']}_top_words.csv")
+        if not os.path.exists(csv_path):
+            print(f"{sent['name']} TF-IDF words file not found at {csv_path}. Skipping.")
+            continue
+            
+        df = pd.read_csv(csv_path)
+        
+        # Build frequency dictionary
+        # Handle cases where multiple Portuguese words translate to the same English word by grouping and summing
+        freq_dict = df.groupby("term_en")["score"].sum().to_dict()
+        
+        # Generate word cloud from frequencies
+        wordcloud = WordCloud(
+            width=1200, height=600,
+            background_color="white",
+            colormap=sent['color'],
+            max_words=100,
+            contour_width=0
+        ).generate_from_frequencies(freq_dict)
+        
+        plt.figure(figsize=(15, 8))
+        plt.imshow(wordcloud, interpolation="bilinear")
+        plt.axis("off")
+        plt.title(sent['title'], pad=20, fontweight="bold", color=PALETTE["dark"], fontsize=16)
+        plt.tight_layout()
+        
+        file_name = f"07_wordcloud_{sent['name']}.png" if sent['name'] == 'positive' else f"08_wordcloud_{sent['name']}.png"
+        save_path = os.path.join(charts_dir, file_name)
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        plt.close()
+        print(f"Saved {sent['name']} WordCloud to {save_path}")
+
 def run_visualization_pipeline():
     """Main visualization pipeline execution."""
     print("--- Starting Visualization Pipeline ---")
@@ -369,8 +415,9 @@ def run_visualization_pipeline():
     plot_rfm_segments()
     plot_time_series_eda()
     plot_forecast_comparison()
-    plot_xgboost_vs_actual()
+    plot_lightgbm_vs_actual()
     plot_review_complaints()
+    plot_wordcloud()
     print("--- Visualization Pipeline Completed Successfully ---\n")
 
 if __name__ == "__main__":

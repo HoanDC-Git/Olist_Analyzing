@@ -70,6 +70,17 @@ def create_time_series_data():
     df_ts.loc[date_strings.isin(bf_set), "event_weight"] = 5
     df_ts.loc[date_strings.isin(bf_set), "is_black_friday"] = 1
     
+    # Calculate days until next Black Friday
+    bf_dates_sorted = sorted([pd.to_datetime(d) for d in bf_set])
+    
+    def get_days_until_bf(current_date):
+        future_bfs = [bf for bf in bf_dates_sorted if bf >= current_date]
+        if future_bfs:
+            return (future_bfs[0] - current_date).days
+        return 365 # Default if no future BF found in dataset
+        
+    df_ts["days_until_black_friday"] = df_ts["date"].apply(get_days_until_bf)
+    
     # Save processed timeseries
     df_ts.to_csv(output_path, index=False)
     print(f"  Saved time-series to {output_path}")

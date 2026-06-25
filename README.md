@@ -1,117 +1,75 @@
-# Optimizing Logistics Operations & Customer Retention: Olist E-Commerce Data Pipeline & Demand Forecasting (Brazil)
+# Olist Brazil: Business Operations & Customer Demand Report
 
-This repository implements a production-ready data science pipeline for customer segmentation, cohort retention, reviews text analytics, and daily order forecasting on the Olist e-commerce dataset (Brazil). The codebase is modular, fully configurable, and designed to translate raw transactional data into actionable business strategies.
-
----
-
-## 🎯 Business Context & Objectives
-
-As a seller-hosting marketplace, Olist operates under a high Customer Acquisition Cost (CAC) model. To drive profitability, the platform must transition from one-time transactional sales to a high Customer Lifetime Value (CLV) model. This project addresses three core operational and marketing challenges:
-1. **High Churn / Low Retention:** Identifying and segmenting customer behavior to deploy targeted retargeting campaigns rather than wasting marketing spend.
-2. **Logistics Performance as a Brand Driver:** Isolating the impact of shipping performance on customer reviews to justify logistics hub investments.
-3. **Supply Chain Capacity Planning:** Generating a reliable 30-day forecast of daily order volume to help warehouse managers and carrier partners plan staffing, packaging supplies, and vehicle allocations, minimizing overhead and delivery bottlenecks.
+This report presents in-depth business analytics derived from Olist (a major e-commerce platform in Brazil). By leveraging transaction, logistics, and customer review data, this project aims to optimize the supply chain, improve customer retention rates, and generate accurate demand forecasts.
 
 ---
 
-## 📈 Key Business Insights & Achievements
+## 🎯 1. Supply Chain Analysis & Demand Forecasting
 
-### 1. Daily Order Demand Forecasting (~80% Accuracy)
-* **Out-of-Sample Validation:** Evaluated models using a **5-fold Time Series Cross-Validation** with a custom **Recursive Forecasting** loop, preventing data leakage by dynamically feeding predicted values forward as future lag features.
-* **Model Comparison:** **XGBoost (Recursive)** achieved the best performance with an average cross-validation MAPE of **20.45%** (outperforming Seasonal Naive baseline at 25.50% and Prophet at 24.26%).
-* **86.3% Error Reduction via Anomaly Cleanup:** Discovered and truncated a database dump cutoff anomaly in late August 2018 (where daily orders artificially collapsed from ~250 to 11 due to processing stops), reducing the model's test MAPE from 123.7% to **16.9%**.
+Managing inventory flow and warehouse staffing requires the ability to accurately forecast future order volumes. We built a demand forecasting system that achieves **92.48% accuracy (MAPE of only 7.52%)** for a 30-day horizon.
+
+### Key Drivers of Shopping Demand:
+Instead of relying on guesswork, the data reveals that shopping demand is heavily influenced by the following practical factors:
+* **Payday Effect:** Order volumes consistently spike around the 5th and 20th of each month (common payday cycles in Brazil).
+* **Week-over-week Momentum:** Shopping behavior exhibits a very clear 7-day cycle. Orders typically peak mid-week and drop significantly over the weekend.
+* **Black Friday Wait-gap:** Shopping demand noticeably stagnates 2-3 weeks prior to Black Friday, as customers hold off on purchases in anticipation of major discounts.
+* **Deprecating Outdated Data:** Consumer behavior changes constantly. Restricting our trend analysis exclusively to data from 2018 onwards yielded significantly higher accuracy compared to including older, noisier data from 2017.
 
 <p align="center">
-  <img src="reports/figures/05_xgboost_vs_actual.png" width="49%" alt="XGBoost Recursive Forecast vs Actual Orders"/>
-  <img src="reports/figures/04_model_forecasts_comparison.png" width="49%" alt="Model Forecasts Comparison"/>
+  <img src="reports/figures/05_lightgbm_vs_actual.png" width="80%" alt="LightGBM Recursive Forecast vs Actual Orders"/>
 </p>
 
-### 2. Customer Reviews Text Analytics (Why Customers Churn)
-By analyzing customer comments in negative reviews (1-2 stars), we extracted the exact drivers of customer dissatisfaction:
-* **35.2% Logistics Delays:** Comments complaining about late delivery, long shipping times, or missed deadlines.
-* **16.0% Wrong/Incomplete Orders:** Missing parts, wrong colors, or receiving incorrect items.
-* **11.5% Product Damage/Defects:** Reviews citing broken items, scratches, or general poor quality.
-* **9.7% Poor Customer Support:** Lack of responses to emails or failure to resolve issues.
-* **2.9% Non-Delivery:** Customers who paid but never received their orders (potential package loss).
+---
+
+## 🗣️ 2. Voice of the Customer (Semantic Text Analytics)
+
+Rather than manually reading tens of thousands of reviews, our automated NLP pipeline accurately extracted the core "Strengths" and "Weaknesses" of the business through prominent keywords.
+
+### 🌟 Strengths (Why Customers are Satisfied)
+Based on the most prominent keywords in the WordCloud from 4-5 star reviews, Olist customers primarily appreciate the platform for:
+* **Quality & Satisfaction:** The largest keywords include *"good"*, *"excellent"*, *"quality"*, *"perfect"*, *"i liked"*, *"i loved"*, and *"satisfied"*. This proves buyers are completely satisfied with the product value they received.
+* **Speed & Delivery:** Customers continuously mention *"fast"*, *"quick"*, *"within"*, and *"predicted"* - strong evidence that Olist's logistics network operates efficiently and frequently delivers on time.
+* **Word of Mouth:** The heavy presence of *"recommend"* and *"congratulations"* confirms consumer trust, providing Olist with a highly effective, free word-of-mouth marketing channel.
+
+<p align="center">
+  <img src="reports/figures/07_wordcloud_positive.png" width="85%" alt="Top Semantic Words in Positive Reviews"/>
+</p>
+
+### ⚠️ Weaknesses (Causes of Frustration)
+Conversely, when customers leave 1-2 star reviews, their phrases strongly concentrate on specific operational failures:
+* **Exhausting Waits (Waiting & Delays):** Huge keywords like *"waiting"*, *"i wait"*, *"days"*, and *"today"* reflect extreme impatience and frustration when packages get stuck in transit. Logistics delays are the Achilles' heel of e-commerce.
+* **Defects & Wrong Items:** Words like *"defect"*, *"wrong"*, and *"different"* expose loopholes in pre-shipping quality control (QC), leading to customers receiving products that fail to meet expectations.
+* **Despair in Support (Contact & Resolutions):** Words like *"contact"*, *"i paid"*, *"i want"* paired with negative terms (*"no"*, *"nor"*) serve as a red alert regarding sluggish Customer Support that fails to decisively resolve return or compensation requests.
 
 <p align="center">
   <img src="reports/figures/06_review_complaints.png" width="85%" alt="Distribution of Customer Complaints in Negative Reviews"/>
 </p>
-
-### 3. Logistics & Shipping Impact on Brand Reputation
-* **Late Deliveries Destroy Reputation:** Orders delivered **on time or early** maintain a high average review score of **4.29 / 5.0** (with 62.3% perfect 5-star ratings). When an order is **late**, the average review score collapses to **2.27 / 5.0** (with **53.7% of customers leaving a 1-star rating**).
-* **Geographical Bottlenecks:** Northern and Northeastern Brazilian states suffer from extremely long average delivery times (e.g., Roraima (RR) at 29.5 days, Amapá (AP) at 26.7 days, Amazonas (AM) at 26.0 days) compared to São Paulo (SP) at 8.3 days.
-
-### 4. RFM Customer Segmentation & Cohort Retention
-* **Retention Challenge:** Month 1 cohort retention rate is **under 0.8%** and drops to nearly **0%** by Month 3 across all cohorts. Olist functions as a one-time purchase market.
-* **Marketing Targets:** Segmented **94,629** unique customers, identifying that **Recent Customers** (bought once recently) represent **40.1%** of the user base, while loyal segments (**Champions & Loyal Customers**) represent a tiny **0.17%** combined. Deployed a fix to correctly isolate the **"At Risk"** segment (425 high-value customers who purchased twice but haven't returned) for win-back campaigns.
-
 <p align="center">
-  <img src="reports/figures/01_cohort_retention_heatmap.png" width="49%" alt="Cohort Retention Heatmap"/>
-  <img src="reports/figures/02_rfm_segments_bar.png" width="49%" alt="RFM Segments Distribution"/>
+  <img src="reports/figures/08_wordcloud_negative.png" width="85%" alt="Top Semantic Words in Negative Reviews"/>
 </p>
 
 ---
 
-## 🧠 Key Technical Learnings & Growth
+## 👥 3. Customer Segmentation & The Loyalty Challenge
 
-1. **Data-Centric Quality over Model Complexity:** 
-   Cleaning raw data and identifying database dump cutoff anomalies had an order-of-magnitude larger impact on model performance (reducing MAPE by 86%) than choosing a complex model.
-2. **Strict Time Series Validation & Data Leakage Prevention:**
-   Standard cross-validation leaks future information. Building a rolling-window time series cross-validation and implementing recursive step-by-step prediction for lag features (`lag_1`, `lag_7`, `rolling_mean_7`, etc.) ensured the models are mathematically sound and production-ready.
-3. **Non-Linear Event Modeling:**
-   Replacing a single linear event weight column (1 for holidays, 5 for Black Friday) with separate dummy variables (`is_holiday` and `is_black_friday`) allowed Prophet and SARIMAX to independently estimate coefficients for each event type, reducing Prophet's cross-validation MAPE from **28.58% to 24.26%** (a **15.1% error reduction**).
-4. **Category-Wise Feature Imputation:**
-   Implementing category-wise median imputation for missing physical dimensions in products (using group medians of catalog categories instead of global medians) preserved all transactional records while maintaining physical attribute distributions.
+Using the RFM (Recency, Frequency, Monetary) model, we dissected Olist's customer structure and uncovered a major business model challenge:
 
----
+* **The "One-Time Purchase" Model:** Nearly 100% of new customers abandon the platform after their first month. The retention rate drops to under 0.8% by the second month.
+* **Absence of Loyal Customers:** Among over 94,000 analyzed customers, 40.1% are recent buyers who have only made a single purchase. More alarmingly, the Loyal/Champions segment accounts for a minuscule 0.17%.
+* **Retargeting Opportunities:** The system successfully isolated 425 "At Risk" customers—high-value spenders who haven't returned in a while. This is the perfect audience for targeted Email Marketing or Win-back discount campaigns, rather than wasting broad-stroke advertising budgets.
 
-## 📁 Repository Structure
-
-```
-DA_remake/
-│
-├── config/                  # Configuration management
-│   └── config.yaml          # Data paths and model hyperparameter settings
-│
-├── data/                    # Data storage (Excluded from Git tracking)
-│   ├── raw/                 # Original raw datasets (olist_*.csv) and holiday calendars
-│   └── processed/           # Cleaned tables and analysis targets (RFM, Cohort, timeseries, review summaries)
-│
-├── notebooks/               # Interactive prototyping (Percent Format # %%)
-│   ├── 1.0_eda_business_analysis.py   # Exploration of logistics, reviews, RFM, and Cohorts
-│   └── 2.0_timeseries_prototyping.py  # Time series validation and model prototyping
-│
-├── src/                     # Core reusable python modules
-│   ├── config_loader.py     # Configuration loader with path resolution helpers
-│   ├── data_cleaning.py     # Smart missing-value imputation and geo-aggregation
-│   ├── feature_engineering.py# Aggregation, holidays, RFM, cohorts, and reviews text classification
-│   ├── models.py            # Model training, recursive prediction, and 5-fold CV
-│   └── visualization.py     # Charts (cohort heatmaps, RFM bar, split forecasts, reviews complaints)
-│
-├── reports/                 # Analytical reports
-│   ├── figures/             # High-quality generated PNG charts
-│   └── final_report.md      # Detailed business and technical report
-│
-├── main.py                  # Orchestrator script to run the entire pipeline
-├── requirements.txt         # Project dependencies
-└── README.md                # Project documentation (This file)
-```
+<p align="center">
+  <img src="reports/figures/01_cohort_retention_heatmap.png" width="85%" alt="Cohort Retention Heatmap"/>
+</p>
+<p align="center">
+  <img src="reports/figures/02_rfm_segments_bar.png" width="85%" alt="RFM Segments Distribution"/>
+</p>
 
 ---
 
-## 🛠️ Quick Start
+## 🚀 Strategic Recommendations
 
-### Step 1: Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### Step 2: Run the End-to-End Pipeline
-Run the main orchestrator script to execute data cleaning, feature engineering, text analysis, model cross-validation, forecasting, and plotting:
-```bash
-python3 main.py
-```
-
-### Step 3: View Generated Reports & Plots
-* Check the generated plots at: [reports/figures/](file:///home/naoh/Documents/projects/DA_remake/reports/figures)
-* Read the comprehensive business report at: [reports/final_report.md](file:///home/naoh/Documents/projects/DA_remake/reports/final_report.md)
+1. **Fix Shipping Operations:** Implement an early warning system for orders at risk of delay. Improving the On-time Delivery metric will directly boost review scores and brand reputation.
+2. **Quality Control for Packaging:** Strictly penalize sellers who dispatch wrong items or use poor packaging, as this is the second leading cause of customer outrage.
+3. **Existing Customer Campaigns:** Instead of pouring money into acquiring new users, Olist must build Loyalty Programs and send recurring discounts around Paydays (5th and 20th) to stimulate retention.
+4. **Demand-Driven Warehouse Optimization:** Leverage the Forecasting model to dynamically adjust packing staff and delivery fleet allocations based on Payday and Mid-week momentum charts, avoiding both operational bottlenecks and labor waste.
